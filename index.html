@@ -327,20 +327,22 @@ function compute() {
     };
   }
 
-  // Determine best target
-  // Strategy: perf to 6100 (max), then find peak needed
-  const needPerf = MAX_PERF; // always target max
-  const needStars = 50;      // always need 50 stars for 6100 cap
+  // Strategy: perf to 6100 (max), then find peak needed for coefficient
+  const needPerf = MAX_PERF;
   const tgtPeak = findMinPeak(needPerf, s.netWins, s.challWins, s.goal);
   const needNetWins = requiredNetWins(tgtPeak);
   const finalCoeff = getCoeff(tgtPeak) + getChallPerWin(tgtPeak) * s.challWins;
   const finalPower = Math.round(needPerf * finalCoeff / 100);
 
-  // Case determination
-  const isCaseB = s.peak >= 1800 && s.perf < 5000; // high peak, low perf
-  const isCaseA = !isCaseB && gap > 0;
+  // Cap unlock: need EITHER 50 stars OR peak 1600
+  const capByStars = s.stars >= 50;
+  const capByPeak = s.peak >= 1600 || tgtPeak >= 1600; // will hit 1600 during climb
+  const capUnlocked = capByStars || capByPeak;
+  const needStars = capByPeak ? s.stars : 50; // if peak unlocks cap, stars optional
 
-  const caseLabel = isCaseB ? '案例 B：高巅峰 · 低表现分' : '案例 A：冲巅峰一条龙';
+  // Case determination
+  const isCaseB = s.peak >= 1800 && s.perf < 5000;
+  const isCaseA = !isCaseB && gap > 0;
 
   // Build steps
   const steps = [];
@@ -349,53 +351,45 @@ function compute() {
   calcLines.push(`当前系数 = ${s.coeff.toFixed(1)}% + 挑战赛 ${s.challBonus.toFixed(1)}% = ${s.totalCoeff.toFixed(1)}%`);
   calcLines.push(`当前战力 = ${s.perf.toLocaleString()} × ${s.totalCoeff.toFixed(1)}% = ${s.power.toLocaleString()}`);
   calcLines.push(`目标巅峰 = ${tgtPeak} 分 → 系数 ${getCoeff(tgtPeak).toFixed(1)}%（净胜场≥${needNetWins}）`);
-
-  if (s.challWins > 0) {
-    calcLines.push(`挑战赛加成 = +${(getChallPerWin(tgtPeak)*s.challWins).toFixed(1)}%`);
-  }
+  if (s.challWins > 0) calcLines.push(`挑战赛加成 = +${(getChallPerWin(tgtPeak)*s.challWins).toFixed(1)}%`);
   calcLines.push(`最终战力 = ${needPerf.toLocaleString()} × ${finalCoeff.toFixed(1)}% = ${finalPower.toLocaleString()}`);
+  calcLines.push(`6100上限解锁方式：${capByStars ? '王者50星 ✅' : ''}${capByPeak ? '巅峰1600分 ✅' : '需王者50星 或 巅峰1600分'}`);
 
   if (isCaseB) {
-    // Case B: high peak, low perf → ranked first for perf, then peak catch-up for net wins
     steps.push('① 去排位赛刷表现分（保 KDA、拿牌子，输赢无视），打到 6100');
-    if (s.stars < 50) steps.push(`② 排位顺便上到王者 50 星（解锁 6100 上限）`);
-
-    // Catch-up
+    if (!capByStars && !capByPeak) steps.push('② 排位打到王者 50 星（解锁 6100 表现分上限）');
+    else if (capByPeak && !capByStars) steps.push('② 巅峰已解锁 6100 上限，排位星数无硬性要求');
     const netGap = needNetWins - s.netWins;
     if (s.mult > 1) {
       const actualGames = Math.ceil(netGap / s.mult);
-      steps.push(`③ 回巅峰赛补净胜场：触发 ${s.mult}倍追赶，赢 ${actualGames} 场即可补齐 ${netGap} 个净胜场`);
+      steps.push(`③ 回巅峰赛补净胜场：触发 ${s.mult}倍追赶，赢 ${actualGames} 场补齐 ${netGap} 个净胜场`);
       calcLines.push(`追赶倍数 = ${s.mult}×（巅峰 ${s.peak} 远超净胜阶段 ${s.stage}）`);
-      calcLines.push(`需净胜场 = ${needNetWins}，当前 ${s.netWins}，缺口 ${netGap}`);
-      calcLines.push(`实际需赢 = ${netGap} ÷ ${s.mult} = ${actualGames} 场`);
+      calcLines.push(`需净胜场 = ${needNetWins}，当前 ${s.netWins}，缺口 ${netGap}，实际需赢 ${actualGames} 场`);
     } else {
       steps.push(`③ 回巅峰赛补净胜场：还需 ${netGap} 个净胜场`);
       calcLines.push(`需净胜场 = ${needNetWins}，当前 ${s.netWins}，缺口 ${netGap}`);
     }
     steps.push(`④ 万战到手 ✅`);
   } else {
-    // Case A: low peak → chain play peak
-    steps.push('① 排位先上王者 50 星（解锁 6100 表现分上限）');
+    if (!capByStars && !capByPeak) {
+      steps.push('① 排位打到王者 50 星（解锁 6100 上限）；或直接打巅峰，到 1600 分自动解锁');
+    } else if (capByStars && !capByPeak) {
+      steps.push('① 已王者 50 星 ✅，6100 上限已解锁');
+    }
     steps.push('② 用该英雄一直打巅峰赛，不要换英雄');
-    steps.push(`③ 打到巅峰 1600 分 → 表现分上限解锁 6100，此时 45 场表现分通常已自动打满`);
-    steps.push(`④ 继续打到巅峰 ${tgtPeak} 分 → 途中净胜场自动攒够 ${needNetWins} 场`);
+    steps.push(`③ 打到巅峰 1600 分 → 解锁 6100 表现分上限（如未解锁），45 场表现分通常已自动打满`);
+    steps.push(`④ 继续打到巅峰 ${tgtPeak} 分 → 途中净胜场自动攒够 ${needNetWins} 个`);
     if (s.challWins === 0) {
       const withChall = findMinPeak(needPerf, s.netWins, 3, s.goal);
-      if (withChall < tgtPeak) {
-        steps.push(`💡 蹭挑战赛 3 胜 → 只需巅峰 ${withChall} 分即可万战`);
-      }
+      if (withChall < tgtPeak) steps.push(`💡 蹭挑战赛 3 胜 → 只需巅峰 ${withChall} 分即可万战`);
     }
     steps.push(`⑤ 万战到手 ✅`);
-
-    calcLines.push(`需净胜场 = ${needNetWins} 场（1200→1800每100分2场，1800→${tgtPeak}每100分3场）`);
-    if (s.mult > 1) {
-      calcLines.push(`追赶倍数 = ${s.mult}×（巅峰 ${s.peak} 远超净胜阶段 ${s.stage}）`);
-    }
+    calcLines.push(`需净胜场 = ${needNetWins}（1200→1800每100分2场，1800→${tgtPeak}每100分3场）`);
+    if (s.mult > 1) calcLines.push(`追赶倍数 = ${s.mult}×（巅峰 ${s.peak} 远超净胜阶段 ${s.stage}）`);
   }
 
-  // Catch-up note
   let catchupNote = '';
-  if (s.mult > 1 && isCaseB) {
+  if (s.mult > 1) {
     catchupNote = `<div style="font-size:0.78rem;color:var(--green);margin-top:4px;">`;
     catchupNote += `⚡ 触发 <b>${s.mult}倍追赶</b>：当前巅峰 ${s.peak} 分远超净胜场阶段（${s.stage}分段），`;
     catchupNote += `每赢 1 场 = ${s.mult} 个净胜场！`;
@@ -406,7 +400,9 @@ function compute() {
     ...s, gap,
     tgtStars: needStars, tgtPeak, tgtNetWins: needNetWins,
     tgtPerf: needPerf, tgtPower: finalPower,
-    isCaseA, isCaseB, caseLabel, steps, calcLines, catchupNote
+    capUnlocked, capByPeak, capByStars,
+    isCaseA, isCaseB, caseLabel: isCaseB ? '案例 B：高巅峰 · 低表现分' : '案例 A：冲巅峰一条龙',
+    steps, calcLines, catchupNote
   };
 }
 
@@ -424,7 +420,8 @@ function update() {
   document.getElementById('curGap').textContent = c.gap <= 0 ? '✅ 已达标！' : '还差 ' + c.gap.toLocaleString();
 
   // Target
-  document.getElementById('tgtStars').textContent = c.gap <= 0 ? '已达标' : '王者 ' + c.tgtStars + ' 星';
+  const capNote = c.capByPeak ? '（巅峰1600已解锁上限）' : '';
+  document.getElementById('tgtStars').textContent = c.gap <= 0 ? '已达标' : c.capByPeak ? `巅峰已解锁6100上限，王者星数不限` : '王者 ' + c.tgtStars + ' 星';
   document.getElementById('tgtPeak').textContent = c.gap <= 0 ? '' : '巅峰 ' + c.tgtPeak + ' 分';
   document.getElementById('tgtNetWins').textContent = c.gap <= 0 ? '' : c.tgtNetWins + ' 个净胜场';
   document.getElementById('tgtPerf').textContent = c.gap <= 0 ? '' : c.tgtPerf.toLocaleString() + '（打满）';
