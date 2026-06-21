@@ -184,6 +184,62 @@ input[type="range"] { width: 100%; accent-color: var(--gold); }
   <div class="calc-toggle" onclick="toggleCalc()">📐 展开计算过程 ▾</div>
   <div class="calc-detail" id="calcDetail"></div>
 
+  <!-- Reference Data -->
+  <div class="card">
+    <div class="card-title" style="cursor:pointer;" onclick="toggleRef()">📖 赛季数据参考 ▾ <span style="font-size:0.7rem;color:var(--text-muted);font-weight:400;">（点击展开）</span></div>
+    <div id="refBody" style="display:none;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <!-- Ranked table -->
+        <div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--gold);margin-bottom:6px;">🏆 排位赛段位系数</div>
+          <table class="data-table" style="font-size:0.75rem;">
+            <tr style="color:var(--text-muted);font-size:0.65rem;"><td>星数</td><td>表现分上限</td><td>单局系数</td></tr>
+            <tr><td>0星</td><td>5350</td><td>10.9</td></tr>
+            <tr><td>10星</td><td>5500</td><td>11.1</td></tr>
+            <tr><td>20星</td><td>5650</td><td>11.3</td></tr>
+            <tr><td>30星</td><td>5800</td><td>11.5</td></tr>
+            <tr><td>40星</td><td>5950</td><td>11.7</td></tr>
+            <tr><td>50星</td><td>6100</td><td>11.9</td></tr>
+          </table>
+        </div>
+        <!-- Peak game coeff table -->
+        <div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--gold);margin-bottom:6px;">👑 巅峰赛单局系数</div>
+          <table class="data-table" style="font-size:0.75rem;">
+            <tr style="color:var(--text-muted);font-size:0.65rem;"><td>巅峰分</td><td>表现分上限</td><td>单局系数</td></tr>
+            <tr><td>＜1200</td><td>4600</td><td>9.9</td></tr>
+            <tr><td>1200</td><td>5500</td><td>11.1</td></tr>
+            <tr><td>1300</td><td>5650</td><td>11.3</td></tr>
+            <tr><td>1400</td><td>5800</td><td>11.5</td></tr>
+            <tr><td>1500</td><td>5950</td><td>11.7</td></tr>
+            <tr><td>1600</td><td>6100</td><td>11.9</td></tr>
+            <tr><td>1700</td><td>6100</td><td>12.3</td></tr>
+            <tr><td>1800</td><td>6100</td><td>12.7</td></tr>
+            <tr><td>1900</td><td>6100</td><td>13.1</td></tr>
+            <tr><td>2000</td><td>6100</td><td>13.5</td></tr>
+          </table>
+        </div>
+      </div>
+      <!-- Peak lane coefficient key points -->
+      <div style="margin-top:12px;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--gold);margin-bottom:6px;">🎯 巅峰分路系数（关键分段）</div>
+        <table class="data-table" style="font-size:0.75rem;">
+          <tr style="color:var(--text-muted);font-size:0.65rem;"><td>巅峰分</td><td>1200</td><td>1500</td><td>1600</td><td>1800</td><td>1900</td><td>2000</td><td>2100</td><td>2400</td></tr>
+          <tr><td>系数</td><td>100%</td><td>117.9%</td><td>127.6%</td><td>152.6%</td><td>167.9%</td><td>185.1%</td><td>204.2%</td><td>272.7%</td></tr>
+          <tr style="color:var(--text-muted);font-size:0.65rem;"><td>净胜场</td><td>0</td><td>6</td><td>8</td><td>12</td><td>15</td><td>18</td><td>21</td><td>30</td></tr>
+        </table>
+      </div>
+      <!-- Challenge brackets -->
+      <div style="margin-top:12px;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--gold);margin-bottom:6px;">🏟️ 挑战赛分段加成</div>
+        <table class="data-table" style="font-size:0.75rem;">
+          <tr style="color:var(--text-muted);font-size:0.65rem;"><td>分段</td><td>0-1499</td><td>1500-1799</td><td>1800-1999</td><td>2000-2099</td><td>2100-2199</td><td>2200-2299</td><td>2300-2399</td><td>2400+</td></tr>
+          <tr><td>每胜</td><td>0.8%</td><td>1.0%</td><td>1.2%</td><td>1.4%</td><td>1.6%</td><td>1.8%</td><td>2.0%</td><td>2.4%</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div class="cta-box">
     <div class="cta-title">📱 觉得太难？找我代练</div>
     <div class="cta-wx">微信：zhiaplmm</div>
@@ -459,6 +515,14 @@ function toggleCalc() {
   const isOpen = d.style.display === 'block';
   d.style.display = isOpen ? 'none' : 'block';
   t.textContent = isOpen ? '📐 展开计算过程 ▾' : '📐 收起计算过程 ▴';
+}
+
+function toggleRef() {
+  const body = document.getElementById('refBody');
+  const title = document.querySelector('#refBody').parentElement.querySelector('.card-title');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  title.innerHTML = isOpen ? '📖 赛季数据参考 ▾ <span style="font-size:0.7rem;color:var(--text-muted);font-weight:400;">（点击展开）</span>' : '📖 赛季数据参考 ▴ <span style="font-size:0.7rem;color:var(--text-muted);font-weight:400;">（点击收起）</span>';
 }
 
 function toggleHelp(e, id) {
