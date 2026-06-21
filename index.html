@@ -3,1330 +3,487 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>王者荣耀 S43 战力策略规划器</title>
+<title>王者荣耀 S43 战力计算器</title>
 <style>
-/* ========== Reset & Base ========== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #0a0e17;
-  --bg-card: #111827;
-  --bg-card-hover: #151d2e;
-  --border: #1e293b;
-  --gold: #d4a853;
-  --gold-light: #f0d078;
-  --gold-dark: #a67c2e;
-  --text: #e2e8f0;
-  --text-dim: #94a3b8;
-  --text-muted: #64748b;
-  --red: #ef4444;
-  --green: #22c55e;
-  --orange: #f59e0b;
-  --blue: #3b82f6;
-  --radius: 12px;
-  --radius-sm: 8px;
+  --bg: #0a0e17; --bg-card: #111827; --border: #1e293b;
+  --gold: #d4a853; --gold-light: #f0d078; --gold-dark: #a67c2e;
+  --text: #e2e8f0; --text-dim: #94a3b8; --text-muted: #64748b;
+  --red: #ef4444; --green: #22c55e; --orange: #f59e0b; --blue: #3b82f6;
+  --radius: 10px; --radius-sm: 6px;
 }
-html { font-size: 16px; scroll-behavior: smooth; }
+html { font-size: 16px; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
+  background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6;
 }
-.container { max-width: 760px; margin: 0 auto; padding: 16px 20px 40px; }
+.container { max-width: 700px; margin: 0 auto; padding: 12px 16px 40px; }
 
-/* ========== Header ========== */
-.header {
-  text-align: center;
-  padding: 24px 0 16px;
-}
-.header h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.header .subtitle {
-  font-size: 0.82rem;
-  color: var(--text-dim);
-  margin-top: 6px;
-}
-.header::after {
-  content: '';
-  display: block;
-  width: 50px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  margin: 12px auto 0;
-}
+/* Header */
+.header { text-align: center; padding: 20px 0 10px; }
+.header h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.header .wx { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+.header .wx b { color: var(--gold-light); }
 
-/* ========== Cards ========== */
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  margin-bottom: 14px;
-}
-.card-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--gold);
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.card-title .icon { font-size: 1.1rem; }
+/* Card */
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+.card-title { font-size: 0.92rem; font-weight: 700; color: var(--gold); margin-bottom: 12px; }
 
-/* ========== Input Grid ========== */
-.input-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+/* Input */
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.input-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 480px) { .input-row, .input-row.col3 { grid-template-columns: 1fr 1fr; } }
+.fg { margin-bottom: 10px; }
+.fg label { display: block; font-size: 0.74rem; color: var(--text-dim); margin-bottom: 4px; font-weight: 500; }
+.fg label .u { color: var(--text-muted); font-weight: 400; }
+select, input[type="number"] {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg); color: var(--text); font-size: 0.88rem; font-family: inherit;
 }
-.input-grid.col3 { grid-template-columns: 1fr 1fr 1fr; }
-@media (max-width: 500px) { .input-grid, .input-grid.col3 { grid-template-columns: 1fr 1fr; } }
+select:focus, input:focus { outline: none; border-color: var(--gold); }
+input[type="range"] { width: 100%; accent-color: var(--gold); }
 
-.form-group { }
-.form-label {
-  display: block;
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-.form-label .unit { color: var(--text-muted); font-weight: 400; }
-
-/* Help icon & tooltip */
+/* Help */
 .help-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--border);
-  color: var(--text-muted);
-  font-size: 0.62rem;
-  font-weight: 700;
-  cursor: pointer;
-  user-select: none;
-  margin-left: 4px;
-  vertical-align: middle;
-  transition: all 0.15s;
-  line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; border-radius: 50%; background: var(--border);
+  color: var(--text-muted); font-size: 0.55rem; font-weight: 700; cursor: pointer;
+  margin-left: 3px; vertical-align: middle; transition: all 0.15s;
 }
 .help-icon:hover { background: var(--gold-dark); color: #fff; }
-.help-tip {
-  display: none;
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  background: rgba(59,130,246,0.06);
-  border: 1px solid rgba(59,130,246,0.18);
-  border-radius: 6px;
-  padding: 8px 10px;
-  margin-bottom: 8px;
-  line-height: 1.5;
-}
+.help-tip { display: none; font-size: 0.7rem; color: var(--text-dim); background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.18); border-radius: 5px; padding: 6px 8px; margin-bottom: 6px; line-height: 1.4; }
 .help-tip.show { display: block; }
 .help-tip .loc { color: var(--gold-light); font-weight: 600; }
 
-select, input[type="number"] {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 0.9rem;
-  font-family: inherit;
-  transition: border-color 0.2s;
-  appearance: none;
-  -webkit-appearance: none;
-}
-select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%2394a3b8'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 32px;
-  cursor: pointer;
-}
-input:focus, select:focus { outline: none; border-color: var(--gold); }
-input[type="number"] { -moz-appearance: textfield; }
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.data-table td { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+.data-table td:first-child { color: var(--text-dim); white-space: nowrap; }
+.data-table td:last-child { text-align: right; font-weight: 600; }
+.data-table .big { font-size: 1.1rem; color: var(--gold-light); }
+.data-table .green { color: var(--green); }
+.data-table .orange { color: var(--orange); }
+.data-table .highlight-row { background: rgba(212,168,83,0.06); }
+.data-table .highlight-row td { color: var(--text); font-weight: 700; }
 
-/* Slider */
-.slider-row { display: flex; align-items: center; gap: 10px; }
-.slider-row input[type="range"] { flex: 1; accent-color: var(--gold); }
-.slider-value {
-  min-width: 52px;
-  text-align: center;
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--gold-light);
+/* Target Box */
+.target-box {
+  text-align: center; padding: 18px 16px;
+  background: linear-gradient(135deg, rgba(212,168,83,0.08), rgba(212,168,83,0.01));
+  border: 1px solid rgba(212,168,83,0.2); border-radius: var(--radius); margin-top: 10px;
 }
+.target-power { font-size: 2.6rem; font-weight: 800; background: linear-gradient(135deg, var(--gold-light), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2; }
+.target-power.small { font-size: 2rem; }
 
-/* ========== Buttons ========== */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 9px 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: var(--bg-card);
-  color: var(--text);
+/* Strategy */
+.strategy-badge {
+  display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.78rem; font-weight: 700; margin-bottom: 8px;
 }
-.btn:hover { border-color: var(--text-dim); background: var(--bg-card-hover); }
-.btn-primary {
-  background: linear-gradient(135deg, var(--gold-dark), var(--gold));
-  border-color: var(--gold);
-  color: #000;
-}
-.btn-primary:hover { background: linear-gradient(135deg, var(--gold), var(--gold-light)); }
-.btn-sm { padding: 6px 12px; font-size: 0.78rem; }
-.btn-block { width: 100%; }
+.strategy-badge.case-a { background: rgba(34,197,94,0.12); color: var(--green); }
+.strategy-badge.case-b { background: rgba(245,158,11,0.12); color: var(--orange); }
+.strategy-steps { font-size: 0.83rem; color: var(--text-dim); line-height: 1.8; }
+.strategy-steps .num { color: var(--gold); font-weight: 700; }
 
-/* ========== Stat Row ========== */
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 7px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  font-size: 0.85rem;
-}
-.stat-row:last-child { border-bottom: none; }
-.stat-label { color: var(--text-dim); }
-.stat-value { font-weight: 600; }
-.stat-value.gold { color: var(--gold-light); }
-.stat-value.green { color: var(--green); }
-.stat-value.orange { color: var(--orange); }
-.stat-value.red { color: var(--red); }
-.stat-value.big { font-size: 1.1rem; }
+/* Collapse */
+.calc-toggle { font-size: 0.72rem; color: var(--text-muted); cursor: pointer; user-select: none; margin-top: 8px; display: inline-block; }
+.calc-toggle:hover { color: var(--blue); }
+.calc-detail { display: none; margin-top: 8px; padding: 10px 12px; background: rgba(0,0,0,0.3); border-radius: 5px; font-size: 0.7rem; color: var(--text-dim); line-height: 1.7; font-family: "SF Mono","Consolas","Menlo",monospace; }
+.calc-detail .mr { color: var(--gold-light); font-weight: 600; }
 
-/* ========== Power Display ========== */
-.power-showcase {
-  text-align: center;
-  padding: 14px 20px;
-  background: linear-gradient(135deg, rgba(212,168,83,0.06), rgba(212,168,83,0.01));
-  border-radius: var(--radius);
-  border: 1px solid rgba(212,168,83,0.15);
-  margin-bottom: 12px;
-}
-.power-number {
-  font-size: 2.2rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--gold-light), var(--gold));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1.2;
-}
-.power-label { color: var(--text-dim); font-size: 0.75rem; margin-top: 2px; }
+/* CTA */
+.cta-box { text-align: center; padding: 14px; background: linear-gradient(135deg, rgba(212,168,83,0.1), rgba(212,168,83,0.03)); border: 1px solid rgba(212,168,83,0.25); border-radius: var(--radius); margin-top: 10px; }
+.cta-box .cta-title { font-size: 0.85rem; font-weight: 700; color: var(--gold-light); margin-bottom: 4px; }
+.cta-box .cta-wx { font-size: 1.05rem; font-weight: 800; color: var(--gold-light); letter-spacing: 1.5px; }
+.cta-box .cta-sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
 
-/* ========== Gap Display ========== */
-.gap-big {
-  text-align: center;
-  padding: 20px;
-}
-.gap-number {
-  font-size: 3rem;
-  font-weight: 800;
-  line-height: 1.1;
-}
-.gap-number.need { color: var(--orange); }
-.gap-number.reached { color: var(--green); }
-.gap-detail {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 14px;
-}
-.gap-item {
-  background: var(--bg);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  text-align: center;
-}
-.gap-item .val { font-size: 1.2rem; font-weight: 700; }
-.gap-item .val.warn { color: var(--orange); }
-.gap-item .val.ok { color: var(--green); }
-.gap-item .lbl { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
-
-/* ========== Route Cards ========== */
-.route-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
-}
-@media (max-width: 650px) { .route-cards { grid-template-columns: 1fr; } }
-
-.route-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  position: relative;
-  transition: border-color 0.2s;
-}
-.route-card.recommended {
-  border-color: var(--gold-dark);
-  background: linear-gradient(180deg, rgba(212,168,83,0.06), rgba(212,168,83,0.01));
-}
-.route-badge {
-  position: absolute;
-  top: -10px;
-  right: 12px;
-  background: linear-gradient(135deg, var(--gold-dark), var(--gold));
-  color: #000;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 10px;
-}
-.route-title {
-  font-size: 0.88rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  color: var(--text);
-}
-.route-card.recommended .route-title { color: var(--gold-light); }
-.route-step {
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  padding: 3px 0;
-  display: flex;
-  gap: 6px;
-}
-.route-step .step-num {
-  color: var(--gold);
-  font-weight: 700;
-  min-width: 20px;
-}
-.route-summary {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
-  font-size: 0.82rem;
-}
-.route-summary .games-needed {
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--gold-light);
-}
-.route-summary .feasibility { font-size: 0.75rem; margin-top: 4px; }
-.feasibility.good { color: var(--green); }
-.feasibility.warn { color: var(--orange); }
-.feasibility.bad { color: var(--red); }
-.route-target {
-  font-size: 0.82rem;
-  color: var(--text);
-  padding: 2px 0;
-  font-weight: 600;
-}
-.route-target .highlight { color: var(--gold-light); font-weight: 700; }
-.show-calc {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  cursor: pointer;
-  margin-top: 8px;
-  user-select: none;
-  display: inline-block;
-}
-.show-calc:hover { color: var(--blue); }
-.calc-detail {
-  margin-top: 8px;
-  padding: 10px 12px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 6px;
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  line-height: 1.7;
-  font-family: "SF Mono","Consolas","Menlo",monospace;
-}
-.calc-detail .math-line { color: var(--text-muted); }
-.calc-detail .math-result { color: var(--gold-light); font-weight: 600; }
-
-/* ========== Simulator ========== */
-.sim-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-@media (max-width: 500px) { .sim-grid { grid-template-columns: 1fr; } }
-.sim-result {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 16px;
-  background: linear-gradient(135deg, rgba(212,168,83,0.08), rgba(212,168,83,0.02));
-  border-radius: var(--radius);
-  border: 1px solid rgba(212,168,83,0.2);
-}
-.sim-power {
-  font-size: 2.5rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--gold-light), var(--gold));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.sim-delta { font-size: 0.85rem; margin-top: 2px; }
-.sim-delta.up { color: var(--green); }
-.sim-delta.down { color: var(--red); }
-
-/* ========== Info Banner ========== */
-.info-banner {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
-  background: rgba(59,130,246,0.08);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(59,130,246,0.2);
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  margin-top: 12px;
-}
-.info-banner .icon { font-size: 1.2rem; flex-shrink: 0; }
-
-/* ========== Estimate Helper ========== */
-.estimate-helper {
-  display: flex;
-  gap: 8px;
-  align-items: end;
-  margin-top: 6px;
-}
-.estimate-helper .form-group { margin-bottom: 0; flex: 1; }
-.estimate-helper .result {
-  font-size: 0.78rem;
-  color: var(--gold-light);
-  white-space: nowrap;
-  padding-bottom: 9px;
-}
-.estimate-toggle {
-  font-size: 0.75rem;
-  color: var(--blue);
-  cursor: pointer;
-  user-select: none;
-}
-.estimate-toggle:hover { text-decoration: underline; }
-
-/* ========== Footer ========== */
-.footer {
-  text-align: center;
-  padding: 20px 0 0;
-  color: var(--text-muted);
-  font-size: 0.7rem;
-}
-
-/* ========== Divider ========== */
-.divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 8px 0;
-}
-
-/* ========== Collapse ========== */
-.collapse-toggle {
-  font-size: 0.78rem;
-  color: var(--blue);
-  cursor: pointer;
-  user-select: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.collapse-toggle:hover { text-decoration: underline; }
-.collapse-body { margin-top: 10px; display: none; }
-.collapse-body.open { display: block; }
-
-/* Tag */
-.tag {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 8px;
-  font-size: 0.68rem;
-  font-weight: 600;
-}
-.tag-good { background: rgba(34,197,94,0.12); color: var(--green); }
-.tag-warn { background: rgba(245,158,11,0.12); color: var(--orange); }
-.tag-info { background: rgba(59,130,246,0.12); color: var(--blue); }
+/* Footer */
+.footer { text-align: center; padding: 16px 0 0; color: var(--text-muted); font-size: 0.68rem; }
+.footer span { color: var(--gold); }
 </style>
 </head>
 <body>
-
 <div class="container">
 
-  <!-- Header -->
-  <div class="header">
-    <h1>⚔️ 王者荣耀 S43 战力策略规划器</h1>
-    <p class="subtitle">输入当前状态和目标，告诉你打到多少星、多少分、怎么打最快</p>
-    <div style="margin-top:10px;font-size:0.82rem;color:var(--text-dim);">
-      需要代练？微信 <span style="color:var(--gold-light);font-weight:700;font-size:0.9rem;">zhiaplmm</span>
-      <span style="color:var(--text-muted);margin-left:4px;">| 效率上分 · 战力代打 · 扫码添加</span>
+<div class="header">
+  <h1>⚔️ 王者荣耀 S43 战力计算器</h1>
+  <div class="wx">需要代练？微信 <b>zhiaplmm</b></div>
+</div>
+
+<!-- INPUT -->
+<div class="card">
+  <div class="card-title">📋 填入你的当前数据</div>
+  <div class="input-row">
+    <div class="fg">
+      <label>🏆 王者星数 <span class="help-icon" onclick="toggleHelp(event,'h-star')">?</span></label>
+      <div class="help-tip" id="h-star">📍 <span class="loc">排位赛界面</span> → 段位框上方查看</div>
+      <select id="stars">
+        <option value="0">王者 0星</option><option value="10">王者 10星</option><option value="20">王者 20星</option>
+        <option value="30">王者 30星</option><option value="40">王者 40星</option><option value="50">王者 50星</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>👑 巅峰积分 <span class="help-icon" onclick="toggleHelp(event,'h-peak')">?</span></label>
+      <div class="help-tip" id="h-peak">📍 <span class="loc">巅峰赛主界面</span> → 顶部中央显示</div>
+      <input type="number" id="peak" value="1200" min="600" max="3000">
+    </div>
+    <div class="fg">
+      <label>📊 英雄表现分 <span class="help-icon" onclick="toggleHelp(event,'h-perf')">?</span></label>
+      <div class="help-tip" id="h-perf">📍 <span class="loc">英雄战力详情</span> → "表现分" 数值</div>
+      <input type="number" id="perf" value="0" min="0" max="99999" placeholder="输入表现分">
+    </div>
+    <div class="fg">
+      <label>⚡ 巅峰净胜场 <span class="help-icon" onclick="toggleHelp(event,'h-net')">?</span></label>
+      <div class="help-tip" id="h-net">📍 <span class="loc">英雄战力详情</span> → 巅峰分路系数区域 → "净胜场：X/Y"，填 X<br>⚠ 是净胜场（赢−输），不是总胜场</div>
+      <input type="number" id="netWins" value="0" min="0" max="999" placeholder="净胜场数">
+    </div>
+    <div class="fg">
+      <label>🏟️ 挑战赛胜场 <span class="help-icon" onclick="toggleHelp(event,'h-chall')">?</span></label>
+      <div class="help-tip" id="h-chall">📍 <span class="loc">巅峰赛 → 挑战赛</span>（周五/六 18-24点）<br>填 0 表示不计算挑战赛加成</div>
+      <input type="number" id="challWins" value="0" min="0" max="12">
+    </div>
+    <div class="fg">
+      <label>🎯 目标战力 <span class="help-icon" onclick="toggleHelp(event,'h-goal')">?</span></label>
+      <div class="help-tip" id="h-goal">📍 万战=10000，小国标≈12000-15000，大国标≈18000+</div>
+      <input type="number" id="goal" value="10000" min="0" max="99999">
     </div>
   </div>
+</div>
 
-  <!-- ===== SECTION 1: Current State ===== -->
-  <div class="card">
-    <div class="card-title"><span class="icon">📋</span> 当前状态</div>
+<!-- OUTPUT: Current Status -->
+<div class="card">
+  <div class="card-title">📊 当前状态</div>
+  <table class="data-table">
+    <tr><td>表现分</td><td id="curPerf">-</td></tr>
+    <tr><td>巅峰系数</td><td id="curCoeff">-</td></tr>
+    <tr><td>挑战赛加成</td><td class="green" id="curChall">-</td></tr>
+    <tr class="highlight-row"><td>当前总战力</td><td class="big" id="curPower">-</td></tr>
+    <tr><td>目标战力</td><td id="curGoal">-</td></tr>
+    <tr><td>差距</td><td class="orange" id="curGap">-</td></tr>
+  </table>
 
-    <div class="input-grid">
-      <div class="form-group">
-        <label class="form-label">🏆 王者星数 <span class="help-icon" onclick="toggleHelp(event,'help-stars')">?</span></label>
-        <div class="help-tip" id="help-stars">📍 <span class="loc">排位赛界面</span> → 段位框上方显示当前星数；或点击头像 → 个人主页查看</div>
-        <select id="stars">
-          <option value="0">王者 0星</option>
-          <option value="10">王者 10星</option>
-          <option value="20">王者 20星</option>
-          <option value="30">王者 30星</option>
-          <option value="40">王者 40星</option>
-          <option value="50">王者 50星</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">👑 巅峰赛分数 <span class="help-icon" onclick="toggleHelp(event,'help-peak')">?</span></label>
-        <div class="help-tip" id="help-peak">📍 <span class="loc">巅峰赛主界面</span> → 顶部中央显示当前巅峰分数（需本赛季打过巅峰赛）</div>
-        <div class="slider-row">
-          <input type="range" id="peakScore" min="1100" max="2500" value="1200" step="10">
-          <span class="slider-value" id="peakScoreVal">1200</span>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">🎯 英雄巅峰胜场 <span class="unit">（解锁系数用）</span> <span class="help-icon" onclick="toggleHelp(event,'help-wins')">?</span></label>
-        <div class="help-tip" id="help-wins">📍 <span class="loc">英雄战力详情页</span> → 点击英雄头像 → 战力详情 → 巅峰分路系数区域，可看到该英雄本赛季巅峰赛专属胜场数</div>
-        <input type="number" id="heroWins" value="0" min="0" max="999">
-      </div>
-      <div class="form-group">
-        <label class="form-label">📊 当前英雄表现分 <span class="help-icon" onclick="toggleHelp(event,'help-perf')">?</span></label>
-        <div class="help-tip" id="help-perf">📍 <span class="loc">英雄战力详情页</span> → 点击英雄 → 战力详情 → 查看"表现分"或"排位表现分"数值</div>
-        <input type="number" id="perfScore" value="0" min="0" max="99999" placeholder="输入表现分">
-      </div>
-    </div>
-
-    <!-- Quick Estimate -->
-    <div style="margin-top:8px;">
-      <span class="estimate-toggle" onclick="toggleEstimate()">📐 不会算表现分？点此快速估算</span>
-      <div class="collapse-body" id="estimateBody">
-        <div class="estimate-helper">
-          <div class="form-group">
-            <label class="form-label">场均评分 <span class="help-icon" onclick="toggleHelp(event,'help-rating')">?</span></label>
-            <div class="help-tip" id="help-rating">📍 每场结算时显示在战绩页的评分（0-16），取你对局中常常拿到的均分即可</div>
-            <input type="number" id="estRating" value="10" min="0" max="16" step="0.1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">有效场次</label>
-            <input type="number" id="estGames" value="30" min="1" max="45">
-          </div>
-          <div class="form-group">
-            <label class="form-label">赛制</label>
-            <select id="estType">
-              <option value="ranked">排位</option>
-              <option value="peak">巅峰</option>
-            </select>
-          </div>
-          <span class="result" id="estResult">≈ 0</span>
-        </div>
-        <div style="font-size:0.7rem;color:var(--text-muted);margin-top:6px;">
-          💡 按场均评分×系数×场次估算。系统只算最好的45场，此处简化。
-          <button class="btn btn-sm" onclick="applyEstimate()" style="margin-left:8px;">应用此值</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Current Stats -->
-    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);">
-      <div class="stat-row">
-        <span class="stat-label">排位赛表现分上限</span>
-        <span class="stat-value" id="statRankedCap">-</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">巅峰赛单局系数 / 上限</span>
-        <span class="stat-value" id="statPeakInfo">-</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">巅峰分路系数</span>
-        <span class="stat-value gold" id="statLaneCoeff">-</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">周末挑战赛加成</span>
-        <span class="stat-value green" id="statChallenge">-</span>
-      </div>
-      <div class="power-showcase">
-        <div class="power-number" id="currentPower">0</div>
-        <div class="power-label">当前英雄总战力</div>
-      </div>
-    </div>
+  <div class="target-box" style="margin-top:10px;">
+    <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:4px;">📌 你需要达到</div>
+    <table class="data-table" style="max-width:400px;margin:0 auto;">
+      <tr><td>🏆 排位</td><td id="tgtStars" style="font-weight:700;color:var(--gold-light);">-</td></tr>
+      <tr><td>👑 巅峰</td><td id="tgtPeak" style="font-weight:700;color:var(--gold-light);">-</td></tr>
+      <tr><td>⚡ 净胜场</td><td id="tgtNetWins" style="font-weight:700;color:var(--gold-light);">-</td></tr>
+      <tr><td>📊 表现分</td><td id="tgtPerf" style="font-weight:700;color:var(--gold-light);">-</td></tr>
+      <tr class="highlight-row"><td>🏅 最终战力</td><td class="big" id="tgtPower">-</td></tr>
+    </table>
   </div>
+</div>
 
-  <!-- ===== SECTION 2: Target & Gap ===== -->
-  <div class="card">
-    <div class="card-title"><span class="icon">🎯</span> 目标设定与差距分析</div>
+<!-- OUTPUT: Strategy -->
+<div class="card">
+  <div class="card-title">🗺️ 怎么打</div>
+  <div id="strategyBadge"></div>
+  <div class="strategy-steps" id="strategySteps"></div>
+  <div id="catchupNote" style="margin-top:8px;"></div>
 
-    <div class="input-grid" style="margin-bottom:12px;">
-      <div class="form-group">
-        <label class="form-label">目标战力 <span class="help-icon" onclick="toggleHelp(event,'help-target')">?</span></label>
-        <div class="help-tip" id="help-target">📍 <span class="loc">战力排行榜</span> → 查看各级战力称号（铜/银/金/荣耀）所需战力；或自行设定目标</div>
-        <input type="number" id="targetPower" value="8000" min="0" max="99999" placeholder="例：8000">
-      </div>
-      <div class="form-group">
-        <label class="form-label">周末挑战赛胜场 <span class="unit">（可选）</span> <span class="help-icon" onclick="toggleHelp(event,'help-chall')">?</span></label>
-        <div class="help-tip" id="help-chall">📍 <span class="loc">巅峰赛界面</span> → 每周五/周六 18:00-24:00 开放，参赛后可在巅峰赛主页查看当前挑战赛胜场数</div>
-        <input type="number" id="challengeWins" value="0" min="0" max="12">
-      </div>
-    </div>
+  <div class="calc-toggle" onclick="toggleCalc()">📐 展开计算过程 ▾</div>
+  <div class="calc-detail" id="calcDetail"></div>
 
-    <div class="gap-big" id="gapDisplay">
-      <div class="gap-number need" id="gapMain">—</div>
-      <div style="color:var(--text-dim);font-size:0.85rem;" id="gapSubtitle"></div>
-      <div class="gap-detail">
-        <div class="gap-item">
-          <div class="val warn" id="gapPerf">—</div>
-          <div class="lbl">表现分缺口</div>
-        </div>
-        <div class="gap-item">
-          <div class="val" id="gapCoeffLabel">—</div>
-          <div class="lbl">系数瓶颈</div>
-        </div>
-      </div>
-    </div>
+  <div class="cta-box">
+    <div class="cta-title">📱 觉得太难？找我代练</div>
+    <div class="cta-wx">微信：zhiaplmm</div>
+    <div class="cta-sub">排位上星 · 巅峰冲刺 · 战力代打 · 挑战赛全胜</div>
   </div>
+</div>
 
-  <!-- ===== SECTION 3: Strategy Routes ===== -->
-  <div class="card">
-    <div class="card-title"><span class="icon">🗺️</span> 达成路线对比</div>
-
-    <div class="route-cards">
-      <!-- Route A: Ranked -->
-      <div class="route-card" id="routeARanked">
-        <div class="route-title">🏆 排位路线</div>
-        <div id="routeASteps"></div>
-        <div class="route-summary">
-          <div class="route-target" id="routeATarget">—</div>
-          <div class="games-needed" id="routeAGames">—</div>
-          <div class="feasibility" id="routeAFeasibility">—</div>
-        </div>
-        <div class="calc-detail" id="routeACalc" style="display:none;"></div>
-        <div class="show-calc" onclick="toggleCalc('routeACalc',this)">📐 展开计算过程 ▾</div>
-      </div>
-
-      <!-- Route B: Peak -->
-      <div class="route-card" id="routeBPeak">
-        <div class="route-title">👑 巅峰路线</div>
-        <div id="routeBSteps"></div>
-        <div class="route-summary">
-          <div class="route-target" id="routeBTarget">—</div>
-          <div class="games-needed" id="routeBGames">—</div>
-          <div class="feasibility" id="routeBFeasibility">—</div>
-        </div>
-        <div class="calc-detail" id="routeBCalc" style="display:none;"></div>
-        <div class="show-calc" onclick="toggleCalc('routeBCalc',this)">📐 展开计算过程 ▾</div>
-      </div>
-
-      <!-- Route C: Optimal -->
-      <div class="route-card recommended" id="routeCOptimal">
-        <div class="route-badge">⭐ 推荐</div>
-        <div class="route-title">🚀 综合最优路线</div>
-        <div id="routeCSteps"></div>
-        <div class="route-summary">
-          <div class="route-target" id="routeCTarget">—</div>
-          <div class="games-needed" id="routeCGames">—</div>
-          <div class="feasibility" id="routeCFeasibility">—</div>
-        </div>
-        <div class="calc-detail" id="routeCCalc" style="display:none;"></div>
-        <div class="show-calc" onclick="toggleCalc('routeCCalc',this)">📐 展开计算过程 ▾</div>
-      </div>
-    </div>
-
-    <div class="info-banner" style="margin-top:14px;">
-      <span class="icon">💡</span>
-      <span><strong>核心原则：</strong>系数是全局乘数，提升系数比堆表现分高效得多。优先打巅峰到关键分段（1800分段144%/2000分段173.3%），再补表现分。周末挑战赛是"白送"的系数，必打。</span>
-    </div>
-
-    <!-- WeChat CTA -->
-    <div style="margin-top:14px;padding:14px 18px;background:linear-gradient(135deg,rgba(212,168,83,0.1),rgba(212,168,83,0.03));border:1px solid rgba(212,168,83,0.25);border-radius:var(--radius);text-align:center;">
-      <div style="font-size:0.9rem;font-weight:700;color:var(--gold-light);margin-bottom:6px;">
-        📱 觉得太难、没时间打？找我代练
-      </div>
-      <div style="font-size:1.1rem;font-weight:800;color:var(--gold-light);letter-spacing:2px;">
-        微信：zhiaplmm
-      </div>
-      <div style="font-size:0.73rem;color:var(--text-muted);margin-top:4px;">
-        战力代打 · 效率上分 · 巅峰冲刺 · 挑战赛全胜 — 扫码或搜索添加
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== SECTION 4: Simulator ===== -->
-  <div class="card">
-    <div class="card-title"><span class="icon">🧮</span> 自定义模拟</div>
-    <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px;">拖动滑块模拟不同参数下的战力变化，探索最优路径</p>
-
-    <div class="sim-grid">
-      <div class="form-group">
-        <label class="form-label">🏆 王者星数</label>
-        <select id="simStars">
-          <option value="0">0星</option><option value="10">10星</option><option value="20">20星</option>
-          <option value="30">30星</option><option value="40">40星</option><option value="50">50星</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">👑 巅峰分数</label>
-        <div class="slider-row">
-          <input type="range" id="simPeak" min="1100" max="2500" value="1200" step="10">
-          <span class="slider-value" id="simPeakVal">1200</span>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">🎯 英雄胜场</label>
-        <input type="number" id="simWins" value="0" min="0" max="999">
-      </div>
-      <div class="form-group">
-        <label class="form-label">📊 表现分</label>
-        <input type="number" id="simPerf" value="0" min="0" max="99999">
-      </div>
-      <div class="form-group">
-        <label class="form-label">🏟️ 挑战赛胜场</label>
-        <input type="number" id="simChallenge" value="0" min="0" max="12">
-      </div>
-      <div style="display:flex;align-items:end;">
-        <button class="btn btn-primary btn-block" onclick="applyCurrentToSim()">📋 同步当前状态</button>
-      </div>
-    </div>
-
-    <div class="sim-result" style="margin-top:14px;">
-      <div class="sim-power" id="simPower">0</div>
-      <div class="sim-delta" id="simDelta"></div>
-      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">
-        分路系数 <span id="simCoeff" style="color:var(--gold-light);">100%</span>
-        + 挑战赛 <span id="simChall" style="color:var(--green);">+0%</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="footer">
-    王者荣耀 S43 赛季战力策略规划器 · 数据仅供参考 · 以游戏内实际为准<br>
-    <span style="color:var(--gold);font-weight:600;">代练微信：zhiaplmm</span>
-  </div>
+<div class="footer">王者荣耀 S43 战力计算器 · 数据来源官方 · <span>代练微信：zhiaplmm</span></div>
 
 </div>
 
-<!-- ==================== SCRIPTS ==================== -->
 <script>
-// ==================== DATA TABLES ====================
+// ==================== OFFICIAL COEFFICIENT TABLE ====================
+// Peak score → coefficient (%), every 50 points from 1200 to 3000
+const COEFF_TABLE = [
+  [1200,100.0],[1250,102.0],[1300,104.1],[1350,106.8],[1400,110.0],[1450,113.7],
+  [1500,117.9],[1550,122.5],[1600,127.6],[1650,133.1],[1700,139.1],[1750,145.6],
+  [1800,152.6],[1850,160.0],[1900,167.9],[1950,176.3],[2000,185.1],[2050,194.4],
+  [2100,204.2],[2150,214.5],[2200,225.2],[2250,236.4],[2300,248.0],[2350,260.1],
+  [2400,272.7],[2450,285.8],[2500,299.3],[2550,313.3],[2600,327.8],[2650,342.7],
+  [2700,358.1],[2750,374.0],[2800,390.4],[2850,407.3],[2900,424.7],[2950,442.6],[3000,461.0]
+];
 
-const RANKED_MAP = {
-  0:  { cap: 5350, coeff: 10.9 },
-  10: { cap: 5500, coeff: 11.1 },
-  20: { cap: 5650, coeff: 11.3 },
-  30: { cap: 5800, coeff: 11.5 },
-  40: { cap: 5950, coeff: 11.7 },
-  50: { cap: 6100, coeff: 11.9 },
+// Challenge brackets: [min, max, perWin%]
+const CHALLENGE = [
+  [0,1499,0.8],[1500,1799,1.0],[1800,1999,1.2],[2000,2099,1.4],
+  [2100,2199,1.6],[2200,2299,1.8],[2300,2399,2.0],[2400,5000,2.4]
+];
+
+// Ranked data
+const RANKED = {
+  0:{cap:5350,c:10.9},10:{cap:5500,c:11.1},20:{cap:5650,c:11.3},
+  30:{cap:5800,c:11.5},40:{cap:5950,c:11.7},50:{cap:6100,c:11.9}
 };
 
-const PEAK_THRESHOLDS = [
-  { score: 0,    cap: 4600, coeff: 9.9  },
-  { score: 1200, cap: 5500, coeff: 11.1 },
-  { score: 1300, cap: 5650, coeff: 11.3 },
-  { score: 1400, cap: 5800, coeff: 11.5 },
-  { score: 1500, cap: 5950, coeff: 11.7 },
-  { score: 1600, cap: 6100, coeff: 11.9 },
-  { score: 1700, cap: 6100, coeff: 12.3 },
-  { score: 1800, cap: 6100, coeff: 12.7 },
-  { score: 1900, cap: 6100, coeff: 13.1 },
-  { score: 2000, cap: 6100, coeff: 13.5 },
-];
-
-const LANE_COEFF_TIERS = [
-  { peak: 1200, maxCoeff: 100.0,   wins: 0 },
-  { peak: 1500, maxCoeff: 110.3,   wins: 3 },
-  { peak: 1800, maxCoeff: 144.0,   wins: 10 },
-  { peak: 2000, maxCoeff: 173.3,   wins: 12 },
-  { peak: 2400, maxCoeff: 265.0,   wins: 20 },
-];
-
-const CHALLENGE_BRACKETS = [
-  { min: 0,    max: 1499, perWin: 0.8 },
-  { min: 1500, max: 1799, perWin: 1.0 },
-  { min: 1800, max: 2099, perWin: 1.2 },
-  { min: 2100, max: 2399, perWin: 1.6 },
-  { min: 2400, max: 5000, perWin: 2.4 },
-];
-
-const OVERFLOW_CAP = 6100;
+const MAX_PERF = 6100;
 
 // ==================== HELPERS ====================
 
-function getRankedData(stars) { return RANKED_MAP[stars] || RANKED_MAP[0]; }
-
-function getPeakData(score) {
-  let r = PEAK_THRESHOLDS[0];
-  for (const t of PEAK_THRESHOLDS) { if (score >= t.score) r = t; else break; }
-  return r;
-}
-
-function getPeakBasedLaneCoeff(score) {
-  let r = LANE_COEFF_TIERS[0];
-  for (const t of LANE_COEFF_TIERS) { if (score >= t.peak) r = t; else break; }
-  return r.maxCoeff;
-}
-
-function getUnlockedLaneCoeff(score, wins) {
-  let r = LANE_COEFF_TIERS[0].maxCoeff;
-  for (const t of LANE_COEFF_TIERS) {
-    if (score >= t.peak && wins >= t.wins) r = t.maxCoeff;
+/** Interpolate coefficient for any peak score */
+function getCoeff(peak) {
+  if (peak <= 1200) return 100.0;
+  if (peak >= 3000) return 461.0;
+  for (let i = 0; i < COEFF_TABLE.length - 1; i++) {
+    const [p1, c1] = COEFF_TABLE[i];
+    const [p2, c2] = COEFF_TABLE[i + 1];
+    if (peak >= p1 && peak <= p2) {
+      return c1 + (c2 - c1) * (peak - p1) / (p2 - p1);
+    }
   }
-  return r;
+  return 100.0;
 }
 
-function getChallengePerWin(peakScore) {
-  for (const b of CHALLENGE_BRACKETS) {
-    if (peakScore >= b.min && peakScore <= b.max) return b.perWin;
-  }
+/** Total net wins required to unlock coefficient at a given peak score */
+function requiredNetWins(peak) {
+  let total = 0;
+  // 1200-1800: 2 per 100
+  const stage1 = Math.min(peak, 1800);
+  if (stage1 > 1200) total += Math.ceil((stage1 - 1200) / 100) * 2;
+  // 1800+: 3 per 100
+  if (peak > 1800) total += Math.ceil((peak - 1800) / 100) * 3;
+  return total;
+}
+
+/** current net-win stage (what 100-point bracket are the net wins currently at) */
+function currentNetWinStage(netWins) {
+  // 1200-1800: 2 per 100 = 12 total to reach 1800
+  if (netWins <= 0) return 1200;
+  let remaining = netWins;
+  // each 100-point stage before 1800 costs 2
+  const preStages = Math.min(Math.floor(remaining / 2), 6); // 6 stages × 2 = 12 net wins = 1800
+  if (preStages < 6) return 1200 + preStages * 100;
+  remaining -= 12;
+  // 1800+: 3 per 100
+  const postStages = Math.floor(remaining / 3);
+  return 1800 + postStages * 100;
+}
+
+/** Catch-up multiplier */
+function catchupMult(curPeak, curStage) {
+  const diff = curPeak - curStage;
+  if (diff >= 500) return 4;
+  if (diff >= 300) return 2;
+  return 1;
+}
+
+/** Challenge per-win bonus */
+function getChallPerWin(peak) {
+  for (const [min, max, pw] of CHALLENGE) if (peak >= min && peak <= max) return pw;
   return 0;
 }
 
-function getNextUnlockTier(score, wins) {
-  for (const t of LANE_COEFF_TIERS) {
-    if (score >= t.peak && wins < t.wins) return { tier: t, needs: t.wins - wins };
+/** Find minimum peak score to reach target power */
+function findMinPeak(perfScore, netWins, challWins, targetPower) {
+  // Binary search peak score needed
+  let lo = 1200, hi = 3000, best = 3000;
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const coeff = getCoeff(mid);
+    const chall = getChallPerWin(mid) * challWins;
+    const totalCoeff = coeff + chall;
+    const power = Math.round(perfScore * totalCoeff / 100);
+    if (power >= targetPower) { best = mid; hi = mid - 1; }
+    else lo = mid + 1;
   }
-  for (let i = LANE_COEFF_TIERS.length-1; i >= 0; i--) {
-    if (score >= LANE_COEFF_TIERS[i].peak) return { tier: null, needs: 0, atMax: LANE_COEFF_TIERS[i].maxCoeff };
-  }
-  return { tier: null, needs: 0, atMax: 100 };
+  return best;
 }
 
-// ==================== READ CURRENT STATE ====================
+// ==================== READ STATE ====================
 
-function readState() {
-  const stars = parseInt(document.getElementById('stars').value);
-  const peakScore = parseInt(document.getElementById('peakScore').value);
-  const heroWins = parseInt(document.getElementById('heroWins').value) || 0;
-  const perfScore = parseInt(document.getElementById('perfScore').value) || 0;
-  const challWins = parseInt(document.getElementById('challengeWins').value) || 0;
-  const targetPower = parseInt(document.getElementById('targetPower').value) || 0;
+function read() {
+  const stars = parseInt(document.getElementById('stars').value) || 0;
+  const peak = parseInt(document.getElementById('peak').value) || 1200;
+  const perf = parseInt(document.getElementById('perf').value) || 0;
+  const netWins = parseInt(document.getElementById('netWins').value) || 0;
+  const challWins = parseInt(document.getElementById('challWins').value) || 0;
+  const goal = parseInt(document.getElementById('goal').value) || 10000;
 
-  const rankedData = getRankedData(stars);
-  const peakData = getPeakData(peakScore);
-  const baseCoeff = getPeakBasedLaneCoeff(peakScore);
-  const unlockedCoeff = getUnlockedLaneCoeff(peakScore, heroWins);
-  const laneCoeff = Math.min(baseCoeff, unlockedCoeff);
-  const challengeBonus = getChallengePerWin(peakScore) * challWins;
-  const totalCoeff = laneCoeff + challengeBonus;
-  const currentPower = Math.round(perfScore * totalCoeff / 100);
+  const coeff = getCoeff(peak);
+  const challBonus = getChallPerWin(peak) * challWins;
+  const totalCoeff = coeff + challBonus;
+  const power = Math.round(perf * totalCoeff / 100);
+  const stage = currentNetWinStage(netWins);
+  const mult = catchupMult(peak, stage);
+
+  return { stars, peak, perf, netWins, challWins, goal, coeff, challBonus, totalCoeff, power, stage, mult };
+}
+
+// ==================== COMPUTE ====================
+
+function compute() {
+  const s = read();
+  const gap = s.goal - s.power;
+
+  // Target: if goal already met, show current
+  if (gap <= 0) {
+    return { ...s, gap: 0,
+      tgtStars: s.stars, tgtPeak: s.peak, tgtNetWins: s.netWins, tgtPerf: s.perf, tgtPower: s.power,
+      isCaseA: false, isCaseB: false, caseLabel: '已达标', steps: ['✅ 当前战力已超过目标！'],
+      calcLines: [], catchupNote: ''
+    };
+  }
+
+  // Determine best target
+  // Strategy: perf to 6100 (max), then find peak needed
+  const needPerf = MAX_PERF; // always target max
+  const needStars = 50;      // always need 50 stars for 6100 cap
+  const tgtPeak = findMinPeak(needPerf, s.netWins, s.challWins, s.goal);
+  const needNetWins = requiredNetWins(tgtPeak);
+  const finalCoeff = getCoeff(tgtPeak) + getChallPerWin(tgtPeak) * s.challWins;
+  const finalPower = Math.round(needPerf * finalCoeff / 100);
+
+  // Case determination
+  const isCaseB = s.peak >= 1800 && s.perf < 5000; // high peak, low perf
+  const isCaseA = !isCaseB && gap > 0;
+
+  const caseLabel = isCaseB ? '案例 B：高巅峰 · 低表现分' : '案例 A：冲巅峰一条龙';
+
+  // Build steps
+  const steps = [];
+  const calcLines = [];
+
+  calcLines.push(`当前系数 = ${s.coeff.toFixed(1)}% + 挑战赛 ${s.challBonus.toFixed(1)}% = ${s.totalCoeff.toFixed(1)}%`);
+  calcLines.push(`当前战力 = ${s.perf.toLocaleString()} × ${s.totalCoeff.toFixed(1)}% = ${s.power.toLocaleString()}`);
+  calcLines.push(`目标巅峰 = ${tgtPeak} 分 → 系数 ${getCoeff(tgtPeak).toFixed(1)}%（净胜场≥${needNetWins}）`);
+
+  if (s.challWins > 0) {
+    calcLines.push(`挑战赛加成 = +${(getChallPerWin(tgtPeak)*s.challWins).toFixed(1)}%`);
+  }
+  calcLines.push(`最终战力 = ${needPerf.toLocaleString()} × ${finalCoeff.toFixed(1)}% = ${finalPower.toLocaleString()}`);
+
+  if (isCaseB) {
+    // Case B: high peak, low perf → ranked first for perf, then peak catch-up for net wins
+    steps.push('① 去排位赛刷表现分（保 KDA、拿牌子，输赢无视），打到 6100');
+    if (s.stars < 50) steps.push(`② 排位顺便上到王者 50 星（解锁 6100 上限）`);
+
+    // Catch-up
+    const netGap = needNetWins - s.netWins;
+    if (s.mult > 1) {
+      const actualGames = Math.ceil(netGap / s.mult);
+      steps.push(`③ 回巅峰赛补净胜场：触发 ${s.mult}倍追赶，赢 ${actualGames} 场即可补齐 ${netGap} 个净胜场`);
+      calcLines.push(`追赶倍数 = ${s.mult}×（巅峰 ${s.peak} 远超净胜阶段 ${s.stage}）`);
+      calcLines.push(`需净胜场 = ${needNetWins}，当前 ${s.netWins}，缺口 ${netGap}`);
+      calcLines.push(`实际需赢 = ${netGap} ÷ ${s.mult} = ${actualGames} 场`);
+    } else {
+      steps.push(`③ 回巅峰赛补净胜场：还需 ${netGap} 个净胜场`);
+      calcLines.push(`需净胜场 = ${needNetWins}，当前 ${s.netWins}，缺口 ${netGap}`);
+    }
+    steps.push(`④ 万战到手 ✅`);
+  } else {
+    // Case A: low peak → chain play peak
+    steps.push('① 排位先上王者 50 星（解锁 6100 表现分上限）');
+    steps.push('② 用该英雄一直打巅峰赛，不要换英雄');
+    steps.push(`③ 打到巅峰 1600 分 → 表现分上限解锁 6100，此时 45 场表现分通常已自动打满`);
+    steps.push(`④ 继续打到巅峰 ${tgtPeak} 分 → 途中净胜场自动攒够 ${needNetWins} 场`);
+    if (s.challWins === 0) {
+      const withChall = findMinPeak(needPerf, s.netWins, 3, s.goal);
+      if (withChall < tgtPeak) {
+        steps.push(`💡 蹭挑战赛 3 胜 → 只需巅峰 ${withChall} 分即可万战`);
+      }
+    }
+    steps.push(`⑤ 万战到手 ✅`);
+
+    calcLines.push(`需净胜场 = ${needNetWins} 场（1200→1800每100分2场，1800→${tgtPeak}每100分3场）`);
+    if (s.mult > 1) {
+      calcLines.push(`追赶倍数 = ${s.mult}×（巅峰 ${s.peak} 远超净胜阶段 ${s.stage}）`);
+    }
+  }
+
+  // Catch-up note
+  let catchupNote = '';
+  if (s.mult > 1 && isCaseB) {
+    catchupNote = `<div style="font-size:0.78rem;color:var(--green);margin-top:4px;">`;
+    catchupNote += `⚡ 触发 <b>${s.mult}倍追赶</b>：当前巅峰 ${s.peak} 分远超净胜场阶段（${s.stage}分段），`;
+    catchupNote += `每赢 1 场 = ${s.mult} 个净胜场！`;
+    catchupNote += `</div>`;
+  }
 
   return {
-    stars, peakScore, heroWins, perfScore, challWins, targetPower,
-    rankedData, peakData, baseCoeff, unlockedCoeff, laneCoeff,
-    challengeBonus, totalCoeff, currentPower,
+    ...s, gap,
+    tgtStars: needStars, tgtPeak, tgtNetWins: needNetWins,
+    tgtPerf: needPerf, tgtPower: finalPower,
+    isCaseA, isCaseB, caseLabel, steps, calcLines, catchupNote
   };
 }
 
-function calcPower(perf, totalCoeff) {
-  return Math.round(perf * totalCoeff / 100);
-}
+// ==================== RENDER ====================
 
-// ==================== ROUTE A: Pure Ranked ====================
-
-function analyzeRankedRoute(s) {
-  const targetPerf = Math.ceil(s.targetPower * 100 / s.totalCoeff);
-  const perfGap = Math.max(0, targetPerf - s.perfScore);
-  const steps = [];
-  let totalGames = 0, feasible = true, targetDesc = '', calc = '';
-
-  // Head: formula
-  calc = `<div class="math-line">战力 = 表现分 × 系数 ÷ 100</div>`;
-  calc += `<div class="math-line">当前系数 = ${s.laneCoeff.toFixed(1)}% + ${s.challengeBonus > 0 ? '+' + s.challengeBonus.toFixed(1) + '%' : '0%'} = <b>${s.totalCoeff.toFixed(1)}%</b></div>`;
-  calc += `<div class="math-line">目标表现分 = ${s.targetPower.toLocaleString()} × 100 ÷ ${s.totalCoeff.toFixed(1)} = <span class="math-result">${targetPerf.toLocaleString()}</span></div>`;
-  calc += `<div class="math-line">表现分缺口 = ${targetPerf.toLocaleString()} − ${s.perfScore.toLocaleString()} = ${perfGap.toLocaleString()}</div>`;
-
-  let neededStars = s.stars;
-
-  if (targetPerf > 6100) {
-    const maxReachable = calcPower(6100, s.totalCoeff);
-    calc += `<div class="math-line">⚠ 所需表现分 ${targetPerf.toLocaleString()} > 全分段上限 6100</div>`;
-    calc += `<div class="math-line">即便打满 6100 表现分，最高战力 = 6100 × ${s.totalCoeff.toFixed(1)}% = <span class="math-result">${maxReachable.toLocaleString()}</span></div>`;
-    steps.push({ text: `⚠️ 表现分打满也只能到 ${maxReachable.toLocaleString()} 战力` });
-    steps.push({ text: `必须提升巅峰系数或挑战赛加成` });
-    feasible = false;
-    totalGames = Math.ceil(Math.max(0, 6100 - s.perfScore) / (11.9 * 10));
-    targetDesc = '排位路线无法单独达标';
-  } else if (targetPerf > s.rankedData.cap) {
-    for (const sl of [0, 10, 20, 30, 40, 50]) {
-      if (RANKED_MAP[sl].cap >= targetPerf) { neededStars = sl; break; }
-    }
-    calc += `<div class="math-line">当前星数上限 ${s.rankedData.cap.toLocaleString()} < 所需 ${targetPerf.toLocaleString()}</div>`;
-    calc += `<div class="math-line">需要升到 <span class="math-result">王者 ${neededStars}星</span>（上限 ${RANKED_MAP[neededStars].cap.toLocaleString()}）</div>`;
-    steps.push({ text: `① 升星：王者 ${s.stars}星 → ${neededStars}星（+${neededStars - s.stars}星）` });
-    const avgPerGame = RANKED_MAP[neededStars].coeff * 10;
-    totalGames = Math.ceil(perfGap / avgPerGame);
-    calc += `<div class="math-line">场均表现分 ≈ 10分 × ${RANKED_MAP[neededStars].coeff.toFixed(1)} = ${avgPerGame}</div>`;
-    calc += `<div class="math-line">约需场次 = ${perfGap.toLocaleString()} ÷ ${avgPerGame} = <span class="math-result">${totalGames} 场</span></div>`;
-    steps.push({ text: `② 在王者 ${neededStars}星 打排位约 ${totalGames} 场` });
-    targetDesc = `目标：王者 <span class="highlight">${neededStars}星</span>`;
-    feasible = true;
-  } else {
-    const avgPerGame = s.rankedData.coeff * 10;
-    totalGames = Math.ceil(perfGap / avgPerGame);
-    calc += `<div class="math-line">当前星数上限 ${s.rankedData.cap.toLocaleString()} 够用</div>`;
-    calc += `<div class="math-line">场均表现分 ≈ 10分 × ${s.rankedData.coeff.toFixed(1)} = ${avgPerGame}</div>`;
-    if (perfGap > 0) {
-      calc += `<div class="math-line">约需场次 = ${perfGap.toLocaleString()} ÷ ${avgPerGame} = <span class="math-result">${totalGames} 场</span></div>`;
-    }
-    steps.push({ text: `当前星数上限充足，直接打排位约 ${totalGames} 场` });
-    targetDesc = `当前 王者 <span class="highlight">${s.stars}星</span> 即可`;
-    feasible = true;
-  }
-
-  if (perfGap <= 0) {
-    steps.length = 0; steps.push({ text: '✅ 当前表现分已足够' });
-    totalGames = 0; feasible = true;
-    targetDesc = '已达标';
-    calc += `<div class="math-line">✅ 无需额外表现分</div>`;
-  }
-
-  return { steps, totalGames, feasible, targetDesc, calcDetail: calc };
-}
-
-// ==================== ROUTE B: Pure Peak ====================
-
-function analyzePeakRoute(s) {
-  const steps = [], peakTiers = [1200, 1500, 1800, 2000, 2400];
-  let bestTier = s.peakScore, bestGames = Infinity, bestPlan = null, bestCoeff = s.laneCoeff;
-
-  if (s.currentPower >= s.targetPower) {
-    steps.push({ text: '✅ 当前战力已达标' });
-    return { steps, totalGames: 0, feasible: true, targetDesc: '已达标', calcDetail: '', targetPeak: s.peakScore };
-  }
-
-  for (const tier of peakTiers) {
-    if (tier < s.peakScore) continue;
-    const gamesForPeak = Math.max(0, Math.ceil((tier - s.peakScore) / 8));
-    const projectedWins = s.heroWins + gamesForPeak;
-    const effectiveCoeff = Math.min(getPeakBasedLaneCoeff(tier), getUnlockedLaneCoeff(tier, projectedWins));
-    const tierWinsReq = [...LANE_COEFF_TIERS].reverse().find(t => t.peak <= tier)?.wins || 0;
-    const extraWins = Math.max(0, tierWinsReq - projectedWins);
-    const totalCoeff = effectiveCoeff + s.challengeBonus;
-    const targetPerf = Math.ceil(s.targetPower * 100 / totalCoeff);
-    if (targetPerf > 6100) continue;
-    const perfGap = Math.max(0, targetPerf - s.perfScore);
-    const gamesForPerf = Math.ceil(perfGap / (getPeakData(tier).coeff * 10));
-    const totalGames = gamesForPeak + extraWins + gamesForPerf;
-    if (totalGames < bestGames) {
-      bestGames = totalGames; bestTier = tier; bestCoeff = totalCoeff;
-      bestPlan = { gamesForPeak, extraWins, gamesForPerf, effectiveCoeff, totalCoeff, targetPerf, projectedWins };
-    }
-  }
-
-  let calc = '', targetDesc = '';
-
-  if (!bestPlan) {
-    steps.push({ text: '⚠️ 纯巅峰无法单独达标，需先解锁胜场或利用挑战赛' });
-    calc = `<div class="math-line">所有可行分段均需表现分 >6100，无法单独靠巅峰完成</div>`;
-    return { steps, totalGames: Infinity, feasible: false, targetDesc: '巅峰路线无法单独达标', calcDetail: calc, targetPeak: s.peakScore };
-  }
-
-  const bestPeakData = getPeakData(bestTier);
-  calc = `<div class="math-line">搜索 ${peakTiers.filter(t=>t>=s.peakScore).join('/')} 分段…</div>`;
-  calc += `<div class="math-line">最优目标分段：<span class="math-result">巅峰 ${bestTier}分</span></div>`;
-  calc += `<div class="math-line">爬到 ${bestTier}分 ≈ ${bestPlan.gamesForPeak} 胜场（每胜≈+8分）</div>`;
-  calc += `<div class="math-line">爬分过程预计累计胜场：${s.heroWins} → ${bestPlan.projectedWins}</div>`;
-  calc += `<div class="math-line">该分段基础系数 ${getPeakBasedLaneCoeff(bestTier).toFixed(1)}%，已解锁 ${getUnlockedLaneCoeff(bestTier, bestPlan.projectedWins).toFixed(1)}% → 生效 ${bestPlan.effectiveCoeff.toFixed(1)}%</div>`;
-  if (bestPlan.extraWins > 0) {
-    calc += `<div class="math-line">还需 +${bestPlan.extraWins} 胜场解锁该分段完整系数</div>`;
-  }
-  calc += `<div class="math-line">目标表现分 = ${s.targetPower.toLocaleString()} × 100 ÷ ${bestPlan.totalCoeff.toFixed(1)} = <span class="math-result">${bestPlan.targetPerf.toLocaleString()}</span></div>`;
-  calc += `<div class="math-line">表现分缺口 = ${bestPlan.targetPerf.toLocaleString()} − ${s.perfScore.toLocaleString()} = ${Math.max(0,bestPlan.targetPerf-s.perfScore).toLocaleString()}</div>`;
-  calc += `<div class="math-line">场均表现分 ≈ 10 × ${bestPeakData.coeff.toFixed(1)} = ${(bestPeakData.coeff*10).toFixed(0)}</div>`;
-  calc += `<div class="math-line">补表现分 ≈ ${Math.max(0,bestPlan.targetPerf-s.perfScore).toLocaleString()} ÷ ${(bestPeakData.coeff*10).toFixed(0)} ≈ <span class="math-result">${bestPlan.gamesForPerf} 场</span></div>`;
-  calc += `<div class="math-line">总计 ≈ ${bestPlan.gamesForPeak} + ${bestPlan.extraWins} + ${bestPlan.gamesForPerf} = <span class="math-result">${bestGames} 场</span></div>`;
-
-  if (bestPlan.gamesForPeak > 0) steps.push({ text: `① 冲刺到巅峰 ${bestTier}分（约 ${bestPlan.gamesForPeak} 胜场）` });
-  if (bestPlan.extraWins > 0) steps.push({ text: `② 再赢 ${bestPlan.extraWins} 场解锁 ${bestPlan.effectiveCoeff.toFixed(1)}% 系数` });
-  if (bestPlan.gamesForPerf > 0) steps.push({ text: `③ 补表现分约 ${bestPlan.gamesForPerf} 场（缺 ${(bestPlan.targetPerf - s.perfScore).toLocaleString()}）` });
-
-  targetDesc = `目标：巅峰 <span class="highlight">${bestTier}分</span> · 系数 ${bestPlan.effectiveCoeff.toFixed(1)}%`;
-
-  return { steps, totalGames: bestGames, feasible: true, targetDesc, calcDetail: calc, targetPeak: bestTier };
-}
-
-// ==================== ROUTE C: Optimal Mixed ====================
-
-function analyzeOptimalRoute(s) {
-  const steps = [];
-  let totalGames = 0, calc = '', targetDesc = '';
-
-  if (s.currentPower >= s.targetPower) {
-    steps.push({ text: '✅ 当前战力已达标！' });
-    return { steps, totalGames: 0, targetDesc: '已达标', calcDetail: '' };
-  }
-
-  calc = `<div class="math-line"><b>综合最优路线 — 计算过程</b></div>`;
-  calc += `<div class="math-line">原则：系数是乘数 → 优先提升系数 → 再用高系数补表现分</div>`;
-  calc += `<div class="math-line">当前：${s.currentPower.toLocaleString()}战力 = ${s.perfScore.toLocaleString()} × ${s.totalCoeff.toFixed(1)}%</div>`;
-
-  // Step 1: Challenge
-  const perWin = getChallengePerWin(s.peakScore);
-  if (s.challengeBonus === 0 && perWin > 0) {
-    const b = perWin * 6;
-    const p = calcPower(s.perfScore, s.laneCoeff + b);
-    calc += `<div class="math-line">① 挑战赛6胜：+${b.toFixed(1)}%系数 → 战力 = ${s.perfScore.toLocaleString()} × ${(s.laneCoeff+b).toFixed(1)}% = <span class="math-result">${p.toLocaleString()}</span></div>`;
-    steps.push({ text: `① 周末打挑战赛6胜 → 系数+${b.toFixed(1)}%，战力升至 ${p.toLocaleString()}` });
-    totalGames += 6;
-  }
-
-  // Step 2: Find best tier
-  const KEY_TIERS = [1500, 1800, 2000, 2400];
-  let bestTier = null, bestPlan = null, bestTotal = Infinity;
-
-  for (const tier of KEY_TIERS) {
-    if (tier <= s.peakScore || tier > s.peakScore + 500) continue;
-    const gPeak = Math.ceil((tier - s.peakScore) / 8);
-    const pWins = s.heroWins + gPeak;
-    const effCoeff = Math.min(getPeakBasedLaneCoeff(tier), getUnlockedLaneCoeff(tier, pWins));
-    const tierWinsReq = [...LANE_COEFF_TIERS].reverse().find(t => t.peak <= tier)?.wins || 0;
-    const extraW = Math.max(0, tierWinsReq - pWins);
-    const totalC = effCoeff + s.challengeBonus;
-    const newPwr = calcPower(s.perfScore, totalC);
-    let gPerf = 0;
-    if (newPwr < s.targetPower) {
-      const tPerf = Math.ceil(s.targetPower * 100 / totalC);
-      if (tPerf > 6100) continue;
-      gPerf = Math.ceil(Math.max(0, tPerf - s.perfScore) / (getPeakData(tier).coeff * 10));
-    }
-    const tot = gPeak + extraW + gPerf;
-    if (tot < bestTotal) { bestTotal = tot; bestTier = tier; bestPlan = { gPeak, extraW, gPerf, effCoeff, totalC, newPwr }; }
-  }
-
-  if (bestPlan) {
-    calc += `<div class="math-line">② 搜索各分段… 最优目标：<span class="math-result">巅峰 ${bestTier}分</span>（总场次最少）</div>`;
-    calc += `<div class="math-line">爬分段 ≈ ${bestPlan.gPeak}胜场 → 系数升至 ${bestPlan.effCoeff.toFixed(1)}%</div>`;
-    calc += `<div class="math-line">新战力 = ${s.perfScore.toLocaleString()} × ${bestPlan.totalC.toFixed(1)}% = <span class="math-result">${bestPlan.newPwr.toLocaleString()}</span></div>`;
-    steps.push({ text: `② 冲刺巅峰到 ${bestTier}分（约${bestPlan.gPeak}胜场）→ 系数 ${bestPlan.effCoeff.toFixed(1)}%，战力→${bestPlan.newPwr.toLocaleString()}` });
-    totalGames += bestPlan.gPeak;
-
-    if (bestPlan.extraW > 0) {
-      calc += `<div class="math-line">③ 补 +${bestPlan.extraW} 胜场解锁 ${bestPlan.effCoeff.toFixed(1)}% 系数</div>`;
-      steps.push({ text: `③ 再赢 ${bestPlan.extraW} 场解锁 ${bestPlan.effCoeff.toFixed(1)}% 完整系数` });
-      totalGames += bestPlan.extraW;
-    }
-
-    if (bestPlan.gPerf > 0) {
-      const tPerf = Math.ceil(s.targetPower * 100 / bestPlan.totalC);
-      const gap = Math.max(0, tPerf - s.perfScore);
-      const bestDt = getPeakData(bestTier);
-      const rkDt = getRankedData(s.stars);
-      const bestMode = bestDt.coeff >= rkDt.coeff ? '巅峰' : '排位';
-      calc += `<div class="math-line">④ 目标表现分 = ${s.targetPower.toLocaleString()} × 100 ÷ ${bestPlan.totalC.toFixed(1)} = ${tPerf.toLocaleString()}</div>`;
-      calc += `<div class="math-line">④ 表现分缺口 = ${tPerf.toLocaleString()} − ${s.perfScore.toLocaleString()} = ${gap.toLocaleString()}</div>`;
-      calc += `<div class="math-line">④ 打${bestMode}补约 ${bestPlan.gPerf} 场（场均10分）</div>`;
-      steps.push({ text: `④ 打${bestMode}补表现分 ${gap.toLocaleString()}（约 ${bestPlan.gPerf} 场）` });
-      totalGames += bestPlan.gPerf;
-    }
-
-    if (bestPlan.newPwr >= s.targetPower) steps.length = 2 + (bestPlan.extraW > 0 ? 1 : 0);
-
-    calc += `<div class="math-line">总计 ≈ ${bestPlan.gPeak} + ${bestPlan.extraW} + ${bestPlan.gPerf} = <span class="math-result">${bestTotal} 场</span></div>`;
-    targetDesc = `目标：巅峰 <span class="highlight">${bestTier}分</span> · 系数 ${bestPlan.effCoeff.toFixed(1)}%`;
-  } else {
-    const bestCoeff = Math.max(s.rankedData.coeff, s.peakData.coeff);
-    const bestMode = s.peakData.coeff >= s.rankedData.coeff ? '巅峰' : '排位';
-    const tPerf = Math.ceil(s.targetPower * 100 / s.totalCoeff);
-    const gap = Math.max(0, tPerf - s.perfScore);
-    if (gap > 6100 - s.perfScore) {
-      calc += `<div class="math-line">⚠ 所需表现分 ${tPerf.toLocaleString()} > 全分段上限 6100</div>`;
-      steps.push({ text: '⚠️ 必须提升巅峰分数或英雄胜场才能达标' });
-      targetDesc = '当前系数下达标困难';
-    } else {
-      const g = Math.ceil(gap / (bestCoeff * 10));
-      calc += `<div class="math-line">目标表现分 = ${tPerf.toLocaleString()}，缺口 = ${gap.toLocaleString()}</div>`;
-      calc += `<div class="math-line">当前系数下打${bestMode}约需 <span class="math-result">${g} 场</span></div>`;
-      steps.push({ text: `② 直接打${bestMode}补表现分约 ${g} 场` });
-      totalGames += g;
-      targetDesc = `当前系数下补表现分即可`;
-    }
-  }
-
-  return { steps, totalGames, targetDesc, calcDetail: calc };
-}
-
-// ==================== UI UPDATE ====================
-
-function updateAll() {
-  const s = readState();
+function update() {
+  const c = compute();
 
   // Current stats
-  document.getElementById('statRankedCap').textContent = s.rankedData.cap.toLocaleString();
-  document.getElementById('statPeakInfo').textContent =
-    `×${s.peakData.coeff.toFixed(1)} / 上限${s.peakData.cap.toLocaleString()}`;
-  document.getElementById('statLaneCoeff').textContent =
-    s.laneCoeff.toFixed(1) + '% (基础' + s.baseCoeff.toFixed(1) + '% / 已解锁' + s.unlockedCoeff.toFixed(1) + '%)';
-  document.getElementById('statChallenge').textContent =
-    s.challengeBonus > 0 ? '+' + s.challengeBonus.toFixed(1) + '%' : '+0% (未填写胜场)';
-  document.getElementById('currentPower').textContent = s.currentPower.toLocaleString();
+  document.getElementById('curPerf').textContent = c.perf.toLocaleString();
+  document.getElementById('curCoeff').textContent = c.coeff.toFixed(1) + '%';
+  document.getElementById('curChall').textContent = c.challBonus > 0 ? '+' + c.challBonus.toFixed(1) + '%' : '+0%（未填）';
+  document.getElementById('curPower').textContent = c.power.toLocaleString();
+  document.getElementById('curGoal').textContent = c.goal.toLocaleString();
+  document.getElementById('curGap').textContent = c.gap <= 0 ? '✅ 已达标！' : '还差 ' + c.gap.toLocaleString();
 
-  // Gap analysis
-  const gap = s.targetPower - s.currentPower;
-  const gapEl = document.getElementById('gapMain');
-  const gapSub = document.getElementById('gapSubtitle');
-  if (gap <= 0) {
-    gapEl.textContent = '✅ 已达标！';
-    gapEl.className = 'gap-number reached';
-    gapSub.textContent = '当前战力已超过目标 ' + Math.abs(gap).toLocaleString();
-    document.getElementById('gapPerf').textContent = '—';
-    document.getElementById('gapPerf').className = 'val ok';
-    document.getElementById('gapCoeffLabel').textContent = '—';
-    document.getElementById('gapCoeffLabel').className = 'val ok';
+  // Target
+  document.getElementById('tgtStars').textContent = c.gap <= 0 ? '已达标' : '王者 ' + c.tgtStars + ' 星';
+  document.getElementById('tgtPeak').textContent = c.gap <= 0 ? '' : '巅峰 ' + c.tgtPeak + ' 分';
+  document.getElementById('tgtNetWins').textContent = c.gap <= 0 ? '' : c.tgtNetWins + ' 个净胜场';
+  document.getElementById('tgtPerf').textContent = c.gap <= 0 ? '' : c.tgtPerf.toLocaleString() + '（打满）';
+  document.getElementById('tgtPower').textContent = c.tgtPower.toLocaleString();
+
+  // Strategy
+  const badge = document.getElementById('strategyBadge');
+  if (c.gap <= 0) {
+    badge.innerHTML = '';
+  } else if (c.isCaseB) {
+    badge.innerHTML = '<div class="strategy-badge case-b">📌 案例 B：高巅峰 · 低表现分</div>';
   } else {
-    gapEl.textContent = '还差 ' + gap.toLocaleString();
-    gapEl.className = 'gap-number need';
-    gapSub.textContent = '需要从 ' + s.currentPower.toLocaleString() + ' → ' + s.targetPower.toLocaleString();
-
-    const targetPerf = Math.ceil(s.targetPower * 100 / s.totalCoeff);
-    const perfGap = Math.max(0, targetPerf - s.perfScore);
-    document.getElementById('gapPerf').textContent = perfGap > 0 ? '需 +' + perfGap.toLocaleString() : '已足够';
-    document.getElementById('gapPerf').className = perfGap > 0 ? 'val warn' : 'val ok';
-
-    const maxPowerAtCurrentCoeff = calcPower(6100, s.totalCoeff);
-    if (s.targetPower > maxPowerAtCurrentCoeff) {
-      const neededCoeff = (s.targetPower * 100 / Math.min(s.perfScore || 6100, 6100)).toFixed(1);
-      document.getElementById('gapCoeffLabel').textContent = '需系数 ≥' + neededCoeff + '%';
-      document.getElementById('gapCoeffLabel').className = 'val warn';
-    } else {
-      document.getElementById('gapCoeffLabel').textContent = '系数充足';
-      document.getElementById('gapCoeffLabel').className = 'val ok';
-    }
+    badge.innerHTML = '<div class="strategy-badge case-a">📌 案例 A：冲巅峰一条龙</div>';
   }
 
-  // Route A: Ranked
-  const routeA = analyzeRankedRoute(s);
-  // Route A: Ranked
-  document.getElementById('routeASteps').innerHTML = routeA.steps.map((st, i) =>
-    `<div class="route-step"><span class="step-num">${i+1}.</span>${st.text}</div>`
-  ).join('') || '<div class="route-step" style="color:var(--text-muted);">计算中...</div>';
-  document.getElementById('routeATarget').innerHTML = routeA.targetDesc || '';
-  document.getElementById('routeAGames').textContent = routeA.totalGames === Infinity
-    ? '不可行' : (routeA.totalGames > 0 ? '约 ' + routeA.totalGames + ' 场' : '已达标');
-  document.getElementById('routeAFeasibility').textContent = routeA.feasible
-    ? (routeA.totalGames > 0 ? '✅ 可行' : '') : '⚠️ 需提升系数';
-  document.getElementById('routeAFeasibility').className = 'feasibility ' + (routeA.feasible ? 'good' : 'warn');
-  document.getElementById('routeACalc').innerHTML = routeA.calcDetail || '';
-  document.getElementById('routeACalc').style.display = 'none';
+  document.getElementById('strategySteps').innerHTML = c.steps.map((s, i) => {
+    const num = String.fromCharCode(9312 + i); // ①②③④⑤
+    return `<div>${num} ${s}</div>`;
+  }).join('');
 
-  // Route B: Peak
-  const routeB = analyzePeakRoute(s);
-  document.getElementById('routeBSteps').innerHTML = routeB.steps.map((st, i) =>
-    `<div class="route-step"><span class="step-num">${i+1}.</span>${st.text}</div>`
-  ).join('');
-  document.getElementById('routeBTarget').innerHTML = routeB.targetDesc || '';
-  document.getElementById('routeBGames').textContent = routeB.totalGames === Infinity
-    ? '不可行' : (routeB.totalGames > 0 ? '约 ' + routeB.totalGames + ' 场' : '已达标');
-  document.getElementById('routeBFeasibility').textContent = routeB.feasible
-    ? (routeB.totalGames > 0 ? '✅ 可行' : '') : '⚠️ 需更多胜场';
-  document.getElementById('routeBFeasibility').className = 'feasibility ' + (routeB.feasible ? 'good' : 'warn');
-  document.getElementById('routeBCalc').innerHTML = routeB.calcDetail || '';
-  document.getElementById('routeBCalc').style.display = 'none';
+  document.getElementById('catchupNote').innerHTML = c.catchupNote;
 
-  // Route C: Optimal
-  const routeC = analyzeOptimalRoute(s);
-  document.getElementById('routeCSteps').innerHTML = routeC.steps.map((st, i) =>
-    `<div class="route-step"><span class="step-num">${i+1}.</span>${st.text}</div>`
-  ).join('');
-  document.getElementById('routeCTarget').innerHTML = routeC.targetDesc || '';
-  document.getElementById('routeCGames').textContent = routeC.totalGames > 0 ? '约 ' + routeC.totalGames + ' 场' : '已达标';
-  document.getElementById('routeCFeasibility').textContent = '⭐ 效率最优';
-  document.getElementById('routeCFeasibility').className = 'feasibility good';
-  document.getElementById('routeCCalc').innerHTML = routeC.calcDetail || '';
-  document.getElementById('routeCCalc').style.display = 'none';
-
-  // Update estimate
-  updateEstimate();
-  // Update sim sync
-  updateSimCompare();
+  // Calc detail
+  document.getElementById('calcDetail').innerHTML = c.calcLines
+    .map(l => `<div>${l}</div>`).join('');
+  document.getElementById('calcDetail').style.display = 'none';
+  document.querySelector('.calc-toggle').textContent = '📐 展开计算过程 ▾';
 }
 
-// ==================== ESTIMATE HELPER ====================
+// ==================== TOGGLE FUNCTIONS ====================
 
-function toggleEstimate() {
-  const body = document.getElementById('estimateBody');
-  body.classList.toggle('open');
+function toggleCalc() {
+  const d = document.getElementById('calcDetail');
+  const t = document.querySelector('.calc-toggle');
+  const isOpen = d.style.display === 'block';
+  d.style.display = isOpen ? 'none' : 'block';
+  t.textContent = isOpen ? '📐 展开计算过程 ▾' : '📐 收起计算过程 ▴';
 }
 
-// ==================== CALC TOGGLE ====================
-
-function toggleCalc(id, el) {
-  const div = document.getElementById(id);
-  if (!div) return;
-  const isOpen = div.style.display === 'block';
-  div.style.display = isOpen ? 'none' : 'block';
-  el.textContent = isOpen ? '📐 展开计算过程 ▾' : '📐 收起计算过程 ▴';
-}
-
-// ==================== HELP TOGGLE ====================
-
-function toggleHelp(event, id) {
-  event.stopPropagation();
+function toggleHelp(e, id) {
+  e.stopPropagation();
   const tip = document.getElementById(id);
   if (!tip) return;
-  // Close all other tips
-  document.querySelectorAll('.help-tip.show').forEach(t => {
-    if (t.id !== id) t.classList.remove('show');
-  });
+  document.querySelectorAll('.help-tip.show').forEach(t => { if (t.id !== id) t.classList.remove('show'); });
   tip.classList.toggle('show');
 }
-
-// Click outside to close any open help tip
-document.addEventListener('click', function(e) {
-  if (!e.target.classList.contains('help-icon')) {
+document.addEventListener('click', e => {
+  if (!e.target.classList.contains('help-icon'))
     document.querySelectorAll('.help-tip.show').forEach(t => t.classList.remove('show'));
-  }
 });
 
-function updateEstimate() {
-  const rating = parseFloat(document.getElementById('estRating').value) || 0;
-  const games = parseInt(document.getElementById('estGames').value) || 0;
-  const type = document.getElementById('estType').value;
-  const coeff = type === 'ranked'
-    ? getRankedData(parseInt(document.getElementById('stars').value)).coeff
-    : getPeakData(parseInt(document.getElementById('peakScore').value)).coeff;
-  const total = rating > 7.0 ? Math.round(rating * coeff * games) : 0;
-  document.getElementById('estResult').textContent = '≈ ' + total.toLocaleString();
-}
+// ==================== LISTENERS ====================
 
-function applyEstimate() {
-  const rating = parseFloat(document.getElementById('estRating').value) || 0;
-  const games = parseInt(document.getElementById('estGames').value) || 0;
-  const type = document.getElementById('estType').value;
-  const coeff = type === 'ranked'
-    ? getRankedData(parseInt(document.getElementById('stars').value)).coeff
-    : getPeakData(parseInt(document.getElementById('peakScore').value)).coeff;
-  const total = rating > 7.0 ? Math.round(rating * coeff * games) : 0;
-  document.getElementById('perfScore').value = total;
-  updateAll();
-}
-
-// ==================== SIMULATOR ====================
-
-function updateSimCompare() {
-  const s = readState();
-  // Sync sim only if it hasn't been manually changed (track via data attr)
-  if (!document.getElementById('simStars').dataset.manual) {
-    document.getElementById('simStars').value = s.stars;
-  }
-  if (!document.getElementById('simPeak').dataset.manual) {
-    document.getElementById('simPeak').value = s.peakScore;
-    document.getElementById('simPeakVal').textContent = s.peakScore;
-  }
-  if (!document.getElementById('simWins').dataset.manual) {
-    document.getElementById('simWins').value = s.heroWins;
-  }
-  if (!document.getElementById('simPerf').dataset.manual) {
-    document.getElementById('simPerf').value = s.perfScore;
-  }
-  if (!document.getElementById('simChallenge').dataset.manual) {
-    document.getElementById('simChallenge').value = s.challWins;
-  }
-  updateSim();
-}
-
-function updateSim() {
-  const stars = parseInt(document.getElementById('simStars').value);
-  const peak = parseInt(document.getElementById('simPeak').value);
-  const wins = parseInt(document.getElementById('simWins').value) || 0;
-  const perf = parseInt(document.getElementById('simPerf').value) || 0;
-  const chall = parseInt(document.getElementById('simChallenge').value) || 0;
-
-  const baseCoeff = getPeakBasedLaneCoeff(peak);
-  const unlockedCoeff = getUnlockedLaneCoeff(peak, wins);
-  const laneCoeff = Math.min(baseCoeff, unlockedCoeff);
-  const challengeBonus = getChallengePerWin(peak) * chall;
-  const totalCoeff = laneCoeff + challengeBonus;
-  const power = calcPower(perf, totalCoeff);
-
-  document.getElementById('simPower').textContent = power.toLocaleString();
-  document.getElementById('simCoeff').textContent = laneCoeff.toFixed(1) + '%';
-  document.getElementById('simChall').textContent = '+' + challengeBonus.toFixed(1) + '%';
-
-  const s = readState();
-  const delta = power - s.currentPower;
-  const deltaEl = document.getElementById('simDelta');
-  if (delta > 0) {
-    deltaEl.textContent = '比当前高 +' + delta.toLocaleString();
-    deltaEl.className = 'sim-delta up';
-  } else if (delta < 0) {
-    deltaEl.textContent = '比当前低 ' + delta.toLocaleString();
-    deltaEl.className = 'sim-delta down';
-  } else {
-    deltaEl.textContent = '与当前持平';
-    deltaEl.className = 'sim-delta';
-  }
-}
-
-function applyCurrentToSim() {
-  const s = readState();
-  document.getElementById('simStars').value = s.stars;
-  document.getElementById('simPeak').value = s.peakScore;
-  document.getElementById('simPeakVal').textContent = s.peakScore;
-  document.getElementById('simWins').value = s.heroWins;
-  document.getElementById('simPerf').value = s.perfScore;
-  document.getElementById('simChallenge').value = s.challWins;
-  // Mark as manual so it doesn't auto-sync
-  document.getElementById('simStars').dataset.manual = 'true';
-  document.getElementById('simPeak').dataset.manual = 'true';
-  document.getElementById('simWins').dataset.manual = 'true';
-  document.getElementById('simPerf').dataset.manual = 'true';
-  document.getElementById('simChallenge').dataset.manual = 'true';
-  updateSim();
-}
-
-// ==================== EVENT LISTENERS ====================
-
-document.getElementById('stars').addEventListener('change', updateAll);
-document.getElementById('peakScore').addEventListener('input', function() {
-  document.getElementById('peakScoreVal').textContent = this.value;
-  updateAll();
-});
-document.getElementById('heroWins').addEventListener('input', updateAll);
-document.getElementById('perfScore').addEventListener('input', updateAll);
-document.getElementById('challengeWins').addEventListener('input', updateAll);
-document.getElementById('targetPower').addEventListener('input', updateAll);
-
-// Estimate listeners
-document.getElementById('estRating').addEventListener('input', updateEstimate);
-document.getElementById('estGames').addEventListener('input', updateEstimate);
-document.getElementById('estType').addEventListener('change', updateEstimate);
-
-// Sim listeners (mark manual on change)
-['simStars', 'simPeak', 'simWins', 'simPerf', 'simChallenge'].forEach(id => {
-  document.getElementById(id).addEventListener('input', function() {
-    this.dataset.manual = 'true';
-    updateSim();
-  });
-  document.getElementById(id).addEventListener('change', function() {
-    this.dataset.manual = 'true';
-    updateSim();
-  });
-});
-document.getElementById('simPeak').addEventListener('input', function() {
-  document.getElementById('simPeakVal').textContent = this.value;
+['stars','peak','perf','netWins','challWins','goal'].forEach(id => {
+  document.getElementById(id).addEventListener('input', update);
+  document.getElementById(id).addEventListener('change', update);
 });
 
-// ==================== INIT ====================
-
-updateAll();
+update();
 </script>
-
 </body>
 </html>
