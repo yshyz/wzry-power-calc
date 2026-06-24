@@ -100,6 +100,35 @@ input[type="range"] { width: 100%; accent-color: var(--gold); }
 /* Footer */
 .footer { text-align: center; padding: 16px 0 0; color: var(--text-muted); font-size: 0.68rem; }
 .footer span { color: var(--gold); }
+
+/* QR Float Button */
+.qr-float {
+  position: fixed; bottom: 24px; right: 24px; z-index: 999;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  border: none; color: #000; font-size: 1.4rem; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(212,168,83,0.3);
+  transition: transform 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.qr-float:hover { transform: scale(1.1); }
+
+/* QR Modal */
+.qr-modal {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;
+}
+.qr-modal.show { display: flex; }
+.qr-modal-content {
+  background: var(--bg-card); border: 1px solid var(--gold-dark); border-radius: var(--radius);
+  padding: 24px; text-align: center; max-width: 320px; width: 90%;
+}
+.qr-modal-content img { width: 200px; height: 200px; border-radius: 8px; margin: 12px 0; }
+.qr-modal-content .wx-text { font-size: 1rem; font-weight: 700; color: var(--gold-light); }
+.qr-modal-content .close-btn {
+  margin-top: 12px; padding: 8px 24px; border: 1px solid var(--border); border-radius: 20px;
+  background: transparent; color: var(--text-dim); cursor: pointer; font-size: 0.85rem;
+}
+.qr-modal-content .close-btn:hover { border-color: var(--gold); color: var(--gold); }
 </style>
 </head>
 <body>
@@ -517,6 +546,10 @@ function toggleCalc() {
   t.textContent = isOpen ? '📐 展开计算过程 ▾' : '📐 收起计算过程 ▴';
 }
 
+function toggleQR() {
+  document.getElementById('qrModal').classList.toggle('show');
+}
+
 function toggleRef() {
   const body = document.getElementById('refBody');
   const title = document.querySelector('#refBody').parentElement.querySelector('.card-title');
@@ -546,5 +579,20 @@ document.addEventListener('click', e => {
 
 update();
 </script>
+<!-- QR Float -->
+<button class="qr-float" onclick="toggleQR()" title="加微信">💬</button>
+
+<!-- QR Modal -->
+<div class="qr-modal" id="qrModal" onclick="if(event.target===this)toggleQR()">
+  <div class="qr-modal-content">
+    <div style="font-size:0.85rem;color:var(--text-dim);">扫码加微信</div>
+    <img src="qrcode.png" alt="微信二维码" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+    <div style="display:none;font-size:0.85rem;color:var(--text-dim);padding:20px;">
+      ⚠️ 请将二维码图片保存为<br><b>qrcode.png</b> 放到项目目录
+    </div>
+    <div class="wx-text">zhiaplmm</div>
+    <button class="close-btn" onclick="toggleQR()">关闭</button>
+  </div>
+</div>
 </body>
 </html>
